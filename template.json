@@ -72,13 +72,6 @@
       "default": "https://studio.exemplo.com"
     },
     {
-      "name": "CLOUDFLARE_TUNNEL_TOKEN",
-      "label": "Cloudflare Tunnel Token",
-      "description": "Token do Cloudflare Tunnel (deixe vazio para não usar tunnel)",
-      "type": "password",
-      "default": ""
-    },
-    {
       "name": "POSTGRES_PASSWORD",
       "label": "PostgreSQL Password",
       "description": "Senha do banco de dados (32+ caracteres, gerada automaticamente)",

@@ -13,7 +13,7 @@
 # Usage:
 #   ./scripts/install.sh                     # full bootstrap
 #   ./scripts/install.sh --skip-healthcheck   # skip health wait
-#   ./scripts/install.sh --no-cloudflare      # skip tunnel
+#   ./scripts/install.sh --monitoring         # with Prometheus + Grafana
 #   ./scripts/install.sh --backup-dir /mnt/bk # custom backup path
 #   ./scripts/install.sh --help               # show options
 # ─────────────────────────────────────────────────────────────
@@ -26,7 +26,6 @@ COMPOSE_FILE="$PROJECT_DIR/docker-compose.yml"
 
 # ─── Defaults ───────────────────────────────────────────────
 SKIP_HEALTHCHECK=false
-NO_CLOUDFLARE=false
 HEALTHCHECK_TIMEOUT=300  # 5 minutes
 BACKUP_DIR="$PROJECT_DIR/backups"
 
@@ -59,7 +58,6 @@ Bootstrap the Supabase production environment.
 
 Options:
   --skip-healthcheck   Skip waiting for services to become healthy
-  --no-cloudflare      Skip the Cloudflare Tunnel service
   --monitoring         Include Prometheus + Grafana + Admin Panel
   --backup-dir <path>  Set custom backup directory (default: ./backups)
   --help               Show this help message
@@ -74,7 +72,6 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-healthcheck) SKIP_HEALTHCHECK=true; shift ;;
-    --no-cloudflare)    NO_CLOUDFLARE=true; shift ;;
     --monitoring)       include_monitoring=true; shift ;;
     --backup-dir)       BACKUP_DIR="$2"; shift 2 ;;
     --help)             usage; exit 0 ;;
@@ -289,34 +286,7 @@ wait_for_healthy() {
 # ─── Start services ─────────────────────────────────────────
 start_services() {
   local extra_profiles="${1:-}"
-  # Determine compose profile
   local profile_args=()
-  local use_cloudflare=false
-
-  if $NO_CLOUDFLARE; then
-    log "Cloudflare Tunnel: disabled (--no-cloudflare flag)"
-  else
-    # Check if token is set
-    local token
-    token=$(grep '^CLOUDFLARE_TUNNEL_TOKEN=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "")
-    if [[ -n "$token" && "$token" != '""' ]]; then
-      profile_args=(--profile cloudflare)
-      use_cloudflare=true
-      log "Cloudflare Tunnel: enabled (token found)"
-    else
-      log_warn "CLOUDFLARE_TUNNEL_TOKEN not set — Cloudflare Tunnel will NOT start"
-      log_warn "Without the tunnel, the environment has no external access."
-      echo ""
-      echo "  To enable external access:"
-      echo "  1. Go to https://one.dash.cloudflare.com/"
-      echo "  2. Access → Tunnels → Create a tunnel"
-      echo "  3. Choose 'Docker' as the environment"
-      echo "  4. Copy the token and set it in .env:"
-      echo "     CLOUDFLARE_TUNNEL_TOKEN=<your-token>"
-      echo "  5. Re-run: docker compose --profile cloudflare up -d cloudflared"
-      echo ""
-    fi
-  fi
 
   # Include extra profiles (e.g., monitoring, admin)
   if [[ -n "$extra_profiles" ]]; then
@@ -360,13 +330,10 @@ start_services() {
     exit $up_exit
   fi
   log_ok "Services started"
-  USE_CLOUDFLARE=$use_cloudflare
 }
 
 # ─── Print summary ──────────────────────────────────────────
 print_summary() {
-  local use_cloudflare="$1"
-
   # Read URLs and keys from .env
   local studio_url api_url anon_key
   studio_url=$(grep '^STUDIO_URL=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "http://localhost:3000")
@@ -383,16 +350,7 @@ print_summary() {
   echo "     Anon Key: $anon_key"
   echo ""
 
-  if ! $use_cloudflare; then
-    echo "  ⚠️  Cloudflare Tunnel is NOT active."
-    echo "     The URLs above are for reference only."
-    echo "     Access is internal-only (localhost/Docker network)."
-    echo "     To enable external access, set CLOUDFLARE_TUNNEL_TOKEN"
-    echo "     and re-run: docker compose --profile cloudflare up -d"
-    echo ""
-  fi
-
-  echo "  Local admin access:"
+  echo "  Local access:"
   echo "     PostgreSQL:  psql postgres://postgres:$postgres_pass@localhost:5432/postgres"
   echo "     Kong Admin:  http://localhost:8001"
   echo ""
@@ -478,7 +436,7 @@ main() {
   fi
 
   # 7. Print summary
-  print_summary "${USE_CLOUDFLARE:-false}"
+  print_summary
 }
 
 main
