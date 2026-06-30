@@ -117,11 +117,11 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
     environment:
       GOTRUE_API_HOST: "0.0.0.0"
       GOTRUE_API_PORT: "9999"
-      GOTRUE_DB_DATABASE_URL: "postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@supavisor:6543/${POSTGRES_DB:-postgres}"
+      GOTRUE_DB_DATABASE_URL: "postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}"
       GOTRUE_DB_MAX_POOL_SIZE: ${GOTRUE_DB_MAX_POOL_SIZE:-20}
       GOTRUE_JWT_SECRET: ${JWT_SECRET}
       GOTRUE_JWT_EXPIRY: ${JWT_EXPIRY:-3600}
@@ -160,9 +160,9 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
     environment:
-      PGRST_DB_URI: "postgres://authenticator:${POSTGRES_PASSWORD}@supavisor:6543/${POSTGRES_DB:-postgres}"
+      PGRST_DB_URI: "postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}"
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public,storage,graphql_public}
       PGRST_DB_ANON_ROLE: "anon"
       PGRST_DB_USE_LEGACY_GUCS: "false"
@@ -183,10 +183,10 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
     environment:
-      DB_HOST: supavisor
-      DB_PORT: "6543"
+      DB_HOST: db
+      DB_PORT: "5432"
       DB_USER: "supabase_realtime_admin"
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB:-postgres}
@@ -211,13 +211,13 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
       rest:
         condition: service_healthy
       imgproxy:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@supavisor:6543/${POSTGRES_DB:-postgres}"
+      DATABASE_URL: "postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}"
       DB_POOL_SIZE: ${STORAGE_DB_POOL_SIZE:-10}
       POSTGREST_URL: "http://rest:3000"
       TENANT_ID: ${POOLER_TENANT_ID:-supabase-tenant}
@@ -265,9 +265,9 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
     environment:
-      PG_META_DB_URL: "postgres://supabase_admin:${POSTGRES_PASSWORD}@supavisor:6543/${POSTGRES_DB:-postgres}"
+      PG_META_DB_URL: "postgres://supabase_admin:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}"
       PG_META_PORT: "8080"
       PG_META_DB_MAX_POOL_SIZE: ${PG_META_DB_MAX_POOL_SIZE:-5}
       PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
@@ -283,13 +283,13 @@ services:
     networks:
       - supabase
     depends_on:
-      <<: *supavisor-depends
+      <<: *db-depends
     environment:
       JWT_SECRET: ${JWT_SECRET}
       SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
-      SUPABASE_DB_URL: "postgres://postgres:${POSTGRES_PASSWORD}@supavisor:6543/${POSTGRES_DB:-postgres}"
+      SUPABASE_DB_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-postgres}"
       VERIFY_JWT: "true"
     volumes:
       - functions-data:/home/deno/functions:ro
@@ -367,8 +367,8 @@ services:
       STUDIO_DEFAULT_ORGANIZATION: ${STUDIO_DEFAULT_ORGANIZATION:-Default Organization}
       STUDIO_DEFAULT_PROJECT: ${STUDIO_DEFAULT_PROJECT:-Default Project}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: "6543"
-      POSTGRES_HOST: supavisor
+      POSTGRES_PORT: "5432"
+      POSTGRES_HOST: db
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
       SUPABASE_ANON_KEY: ${ANON_KEY}
@@ -485,10 +485,9 @@ services:
     profiles:
       - monitoring
     environment:
-      DATA_SOURCE_NAME: "postgresql://supabase_admin:${POSTGRES_PASSWORD}@supavisor:6543/postgres?sslmode=disable&application_name=pg_exporter"
+      DATA_SOURCE_NAME: "postgresql://supabase_admin:${POSTGRES_PASSWORD}@db:5432/postgres?sslmode=disable&application_name=pg_exporter"
     depends_on:
-      supavisor:
-        condition: service_healthy
+      <<: *db-depends
     healthcheck:
       test: ["CMD", "wget", "-q", "http://localhost:9187/metrics"]
       interval: 30s
