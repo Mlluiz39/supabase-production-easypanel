@@ -252,8 +252,11 @@ services:
       IMGPROXY_USE_ETAG: "true"
       IMGPROXY_MAX_SRC_RESOLUTION: "50"
     healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+      test: ["CMD", "imgproxy", "health"]
 
   meta:
     <<: *service-defaults
