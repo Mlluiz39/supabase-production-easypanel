@@ -119,16 +119,17 @@ Internet → Cloudflare DNS → Cloudflare Tunnel → EasyPanel → Docker Compo
 
 ---
 
-### ADR-002 — Supavisor como Pool de Conexões
+### ADR-002 — Supavisor como Pool de Conexões (Externo)
 
-**Decisão:** Usar Supavisor (não PgBouncer).
+**Decisão:** Manter Supavisor disponível, mas serviços internos conectam direto no PostgreSQL.
 
 **Motivo:**
-- Supabase migrou oficialmente para Supavisor. PgBouncer está deprecated no ecossistema Supabase.
-- Supavisor suporta multi-tenant, ideal se no futuro houver múltiplos projetos no mesmo banco.
-- Suporta transaction mode (porta 6543) e session mode (porta 5432).
+- Supavisor exige `external_id` ou `sni_hostname` para roteamento multi-tenant — overhead desnecessário para single-tenant na mesma rede Docker.
+- Serviços internos (GoTrue, PostgREST, Storage, Meta, Functions, Realtime) usam `db:5432` diretamente.
+- Supavisor permanece disponível para conexões externas via Cloudflare Tunnel (com pooling de conexão quando necessário).
+- Supabase migrou oficialmente para Supavisor, mas ele é projetado para cenários multi-tenant com roteamento SNI.
 
-**Trade-offs:** Supavisor é mais pesado que PgBouncer (~100MB RAM extra). Com 24 GB disponíveis, irrelevante.
+**Trade-offs:** Sem pooling entre serviços internos e PostgreSQL. Cada serviço gerencia seu próprio pool (configurável via variáveis de ambiente). Com 24 GB de RAM disponíveis e single-node, conexões diretas não são gargalo.
 
 ---
 
