@@ -361,7 +361,7 @@ services:
       kong:
         condition: service_healthy
       meta:
-        condition: service_healthy
+        condition: service_started
     environment:
       STUDIO_PG_META_URL: "http://meta:8080"
       STUDIO_DEFAULT_ORGANIZATION: ${STUDIO_DEFAULT_ORGANIZATION:-Default Organization}
