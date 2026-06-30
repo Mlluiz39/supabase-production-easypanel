@@ -409,10 +409,11 @@ ensure_backup_dir() {
 # ─── Main ───────────────────────────────────────────────────
 # ─── Generate kong.yml from template ──────────────────────────
 generate_kong_yml() {
+  local template="$PROJECT_DIR/kong/kong.template.yml"
   local kong_file="$PROJECT_DIR/kong/kong.yml"
 
-  if [[ ! -f "$kong_file" ]]; then
-    log_warn "kong/kong.yml not found — skipping Kong config generation"
+  if [[ ! -f "$template" ]]; then
+    log_warn "kong/kong.template.yml not found — skipping Kong config generation"
     return
   fi
 
@@ -425,9 +426,10 @@ generate_kong_yml() {
     return
   fi
 
+  cp "$template" "$kong_file"
   sed -i "s|__ANON_KEY__|${anon_key}|g" "$kong_file"
   sed -i "s|__SERVICE_ROLE_KEY__|${service_role_key}|g" "$kong_file"
-  log_ok "Kong config generated"
+  log_ok "Kong config generated: $kong_file"
 }
 
 main() {
