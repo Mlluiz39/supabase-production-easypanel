@@ -1,0 +1,147 @@
+# CI — Validate, Lint, and Test Supabase Production EasyPanel
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Validate docker-compose.yml ──────────────────────
+  validate-compose:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Validate compose config
+        run: docker compose config --quiet
+
+      - name: Validate with monitoring profile
+        run: docker compose --profile monitoring --profile admin --profile cloudflare config --quiet
+
+  # ─── Lint bash scripts ─────────────────────────────────
+  lint-scripts:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Check all scripts with shellcheck
+        run: |
+          find scripts/ -name '*.sh' -exec shellcheck -x {} +
+          echo "✅ All scripts pass shellcheck"
+
+      - name: Check bash syntax
+        run: |
+          for f in scripts/*.sh; do
+            bash -n "$f" && echo "  ✅ $f" || exit 1
+          done
+
+  # ─── Verify Go admin panel builds ──────────────────────
+  build-admin:
+    name: Build Go Admin Panel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build binary
+        working-directory: go-service
+        run: go build -o admin -ldflags="-s -w" .
+
+      - name: Build Docker image
+        run: docker build -t supabase-admin ./go-service
+
+  # ─── Validate template.json ────────────────────────────
+  validate-template:
+    name: Validate Template JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate template.json
+        run: python3 -c "
+          import json
+          with open('template.json') as f:
+            data = json.load(f)
+          assert 'name' in data
+          assert 'version' in data
+          assert 'services' in data
+          assert 'variables' in data
+          print(f'✅ template.json v{data[\"version\"]} — {len(data[\"services\"])} services, {len(data[\"variables\"])} variables')
+          "
+
+  # ─── Security scan ─────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+
+      - name: Check for secrets in .env.example
+        run: |
+          if grep -qi 'changeme\|your-super-secret' .env.example; then
+            echo "⚠️  Placeholder secrets found in .env.example (expected — safe)"
+          fi
+
+  # ─── Markdown lint ──────────────────────────────────────
+  lint-docs:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint README
+        uses: davidanson/markdownlint-cli2-action@v18
+        with:
+          globs: "README.md"
+          continue-on-check: false
+
+  # ─── Summary ────────────────────────────────────────────
+  summary:
+    name: Summary
+    needs:
+      - validate-compose
+      - lint-scripts
+      - build-admin
+      - validate-template
+      - security-scan
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: |
+          echo "## ✅ CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validate Compose | ${{ needs.validate-compose.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint Scripts | ${{ needs.lint-scripts.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Admin | ${{ needs.build-admin.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validate Template | ${{ needs.validate-template.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY

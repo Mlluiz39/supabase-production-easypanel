@@ -1,0 +1,28 @@
+# Vector Configuration — Log Aggregation for Supabase
+# Collects logs from all containers via Docker socket, outputs to stdout
+
+[sources.docker]
+type = "docker_logs"
+auto_restart = true
+
+# ─── Transforms ────────────────────────────────────────────
+
+[transforms.add_fields]
+type = "remap"
+inputs = ["docker"]
+source = '''
+  .environment = "production"
+  .timestamp = del(.timestamp) ?? now()
+'''
+
+# ─── Sinks ─────────────────────────────────────────────────
+
+[sinks.console]
+type = "console"
+inputs = ["add_fields"]
+encoding.codec = "json"
+
+# Internal health endpoint
+[api]
+enabled = true
+address = "0.0.0.0:8686"

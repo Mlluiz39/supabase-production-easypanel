@@ -1,0 +1,122 @@
+{
+  "name": "Supabase Production",
+  "version": "1.0.0",
+  "description": "Supabase self-hosted completo — PostgreSQL 17, Auth (GoTrue), REST API (PostgREST), Realtime, Storage, Edge Functions, Studio Dashboard, Image Proxy, e mais. Otimizado para Oracle Cloud ARM com Cloudflare Tunnel.",
+  "icon": "https://raw.githubusercontent.com/supabase/supabase/master/apps/docs/public/img/supabase-logo-icon.svg",
+  "categories": ["database", "backend", "api", "authentication"],
+  "documentation": "https://github.com/mlluiz/supabase-production-easypanel",
+  "license": "MIT",
+  "services": [
+    {
+      "name": "supabase-db",
+      "description": "PostgreSQL 17 com extensões Supabase"
+    },
+    {
+      "name": "supabase-supavisor",
+      "description": "Connection pooling (transaction + session)"
+    },
+    {
+      "name": "supabase-kong",
+      "description": "API Gateway com rate limiting e JWT"
+    },
+    {
+      "name": "supabase-auth",
+      "description": "Autenticação (email, OAuth, MFA, passwordless)"
+    },
+    {
+      "name": "supabase-rest",
+      "description": "REST API automática do schema Postgres"
+    },
+    {
+      "name": "supabase-realtime",
+      "description": "WebSockets para mudanças no banco"
+    },
+    {
+      "name": "supabase-storage",
+      "description": "Upload/download de arquivos com RLS"
+    },
+    {
+      "name": "supabase-imgproxy",
+      "description": "Transformação de imagens on-the-fly"
+    },
+    {
+      "name": "supabase-meta",
+      "description": "API de gerenciamento de schema"
+    },
+    {
+      "name": "supabase-functions",
+      "description": "Edge Functions (Deno runtime)"
+    },
+    {
+      "name": "supabase-studio",
+      "description": "Dashboard administrativo Supabase"
+    },
+    {
+      "name": "supabase-vector",
+      "description": "Coleta e roteamento de logs"
+    }
+  ],
+  "variables": [
+    {
+      "name": "SUPABASE_PUBLIC_URL",
+      "label": "API Public URL",
+      "description": "URL pública do Kong/API (ex: https://supabase.seudominio.com)",
+      "type": "string",
+      "default": "https://supabase.exemplo.com"
+    },
+    {
+      "name": "STUDIO_URL",
+      "label": "Studio URL",
+      "description": "URL pública do Dashboard (ex: https://studio.seudominio.com)",
+      "type": "string",
+      "default": "https://studio.exemplo.com"
+    },
+    {
+      "name": "CLOUDFLARE_TUNNEL_TOKEN",
+      "label": "Cloudflare Tunnel Token",
+      "description": "Token do Cloudflare Tunnel (deixe vazio para não usar tunnel)",
+      "type": "password",
+      "default": ""
+    },
+    {
+      "name": "POSTGRES_PASSWORD",
+      "label": "PostgreSQL Password",
+      "description": "Senha do banco de dados (32+ caracteres, gerada automaticamente)",
+      "type": "password",
+      "default": ""
+    },
+    {
+      "name": "JWT_SECRET",
+      "label": "JWT Secret",
+      "description": "Chave de assinatura JWT (32+ caracteres, gerada automaticamente)",
+      "type": "password",
+      "default": ""
+    },
+    {
+      "name": "SMTP_HOST",
+      "label": "SMTP Host",
+      "description": "Servidor SMTP para emails de autenticação (opcional)",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "SMTP_USER",
+      "label": "SMTP User",
+      "description": "Usuário SMTP (opcional)",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "SMTP_PASS",
+      "label": "SMTP Password",
+      "description": "Senha SMTP (opcional)",
+      "type": "password",
+      "default": ""
+    }
+  ],
+  "resources": {
+    "cpu": 4,
+    "memory": 8192,
+    "disk": 20
+  }
+}

@@ -1,0 +1,26 @@
+# Environment secrets — NEVER commit
+.env
+
+# Persistent data — auto-generated at runtime
+volumes/
+
+# Backups — large binary files
+backups/*.dump
+backups/*.dump.gz
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.log
+tmp/

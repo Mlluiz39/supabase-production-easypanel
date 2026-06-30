@@ -1,0 +1,81 @@
+# Prometheus alert rules — Supabase Production
+groups:
+  - name: supabase
+    interval: 30s
+    rules:
+      # ─── Service Availability ──────────────────────────
+      - alert: ServiceDown
+        expr: up == 0
+        for: 60s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} está offline"
+          description: "{{ $labels.instance }} não responde há mais de 60s"
+
+      # ─── Disk ──────────────────────────────────────────
+      - alert: DiskUsageWarning
+        expr: 100 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco com mais de 85% de uso"
+          description: "Uso atual: {{ $value | humanizePercentage }}"
+
+      - alert: DiskUsageCritical
+        expr: 100 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disco criticamente cheio (>95%)"
+          description: "Uso atual: {{ $value | humanizePercentage }}"
+
+      # ─── PostgreSQL ────────────────────────────────────
+      - alert: PostgresConnectionsHigh
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conexões PostgreSQL altas"
+          description: "{{ $value }} conexões ativas (>80)"
+
+      - alert: PostgresCacheHitRatioLow
+        expr: rate(pg_stat_database_blks_hit{datname!~"template.*"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~"template.*"}[5m]) + rate(pg_stat_database_blks_read{datname!~"template.*"}[5m])) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit ratio baixo (<95%)"
+          description: "Hit ratio: {{ $value | humanizePercentage }}"
+
+      # ─── API Gateway ───────────────────────────────────
+      - alert: KongHighLatency
+        expr: histogram_quantile(0.99, rate(kong_http_latency_ms_bucket{type="request"}[5m])) / 1000 > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência P99 alta (>2s)"
+          description: "Latência P99: {{ $value }}s"
+
+      - alert: KongErrorRateHigh
+        expr: sum(rate(kong_http_requests_total{status=~"5[0-9][0-9]"}[5m])) / sum(rate(kong_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taxa de erro Kong >5%"
+          description: "Erros 5xx: {{ $value | humanizePercentage }} das requisições"
+
+      # ─── Backup ────────────────────────────────────────
+      - alert: BackupStale
+        expr: time() - max(pg_last_backup_timestamp) > 86400
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup não executado há mais de 24h"
+          description: "Último backup: {{ $value | humanizeDuration }} atrás"

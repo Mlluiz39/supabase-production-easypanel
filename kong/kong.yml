@@ -1,0 +1,295 @@
+# Kong Declarative Configuration — Supabase Routes
+# Based on upstream supabase/kong config with production adjustments
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: auth-v1
+    url: http://auth:9999/auth/v1
+    routes:
+      - name: auth-v1-all
+        paths:
+          - /auth/v1
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: auth-v1-admin
+    url: http://auth:9999/auth/v1
+    routes:
+      - name: auth-v1-admin-all
+        paths:
+          - /auth/v1/admin
+          - /auth/v1/audience
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: auth-v1-callback
+    url: http://auth:9999/auth/v1
+    routes:
+      - name: auth-v1-callback
+        paths:
+          - /auth/v1/callback
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+
+  - name: rest-v1
+    url: http://rest:3000/rest/v1
+    routes:
+      - name: rest-v1-all
+        paths:
+          - /rest/v1
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+            - Prefer
+            - Prefer-Transaction
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: realtime-v1
+    url: http://realtime:4000/realtime/v1
+    routes:
+      - name: realtime-v1-ws
+        paths:
+          - /realtime/v1
+        strip_path: false
+        protocols:
+          - http
+          - https
+          - ws
+          - wss
+
+  - name: storage-v1
+    url: http://storage:5000/storage/v1
+    routes:
+      - name: storage-v1-all
+        paths:
+          - /storage/v1
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+            - x-upsert
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: meta-v1
+    url: http://meta:8080
+    routes:
+      - name: meta-v1-all
+        paths:
+          - /pg
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: functions-v1
+    url: http://functions:9000/functions/v1
+    routes:
+      - name: functions-v1-all
+        paths:
+          - /functions/v1
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - x-client-info
+            - x-connection-encrypted
+          exposed_headers:
+            - Content-Range
+            - X-Content-Range
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: admin-api
+    url: http://admin:8080
+    routes:
+      - name: admin-api-all
+        paths:
+          - /admin
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+          max_age: 3600
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+consumers:
+  - username: anon
+    keyauth_credentials:
+      - key: ${ANON_KEY}
+  - username: service_role
+    keyauth_credentials:
+      - key: ${SERVICE_ROLE_KEY}
