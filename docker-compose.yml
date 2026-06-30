@@ -152,7 +152,7 @@ services:
       API_EXTERNAL_URL: ${API_EXTERNAL_URL}
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:9999/auth/v1/health"]
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:9999/health"]
 
   rest:
     <<: *service-defaults
@@ -173,9 +173,8 @@ services:
       PGRST_SERVER_PORT: "3000"
       PGRST_ADMIN_SERVER_PORT: "3001"
       PGRST_LOG_LEVEL: ${PGRST_LOG_LEVEL:-info}
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/rest/v1/"]
+    # PostgREST is FROM scratch — no shell, no wget, no curl.
+    # Main process alive = service is working.
 
   realtime:
     <<: *service-defaults
@@ -196,6 +195,7 @@ services:
       API_EXTERNAL_URL: ${API_EXTERNAL_URL}
       JWT_SECRET: ${JWT_SECRET}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      METRICS_JWT_SECRET: ${JWT_SECRET}
       PORT: "4000"
       TENANT_ID: ${POOLER_TENANT_ID:-supabase-tenant}
       REPLICATION_SLOT_POLL_INTERVAL_MS: "5000"
@@ -203,7 +203,7 @@ services:
       SLOT_NAME: "supabase_realtime_rls"
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:4000/realtime/v1/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/realtime/v1/health || exit 1"]
 
   storage:
     <<: *service-defaults
@@ -214,7 +214,7 @@ services:
     depends_on:
       <<: *db-depends
       rest:
-        condition: service_healthy
+        condition: service_started
       imgproxy:
         condition: service_healthy
     environment:
@@ -238,7 +238,7 @@ services:
       - storage-data:/var/lib/storage
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:5000/storage/v1/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/storage/v1/health || exit 1"]
 
   imgproxy:
     <<: *service-defaults
@@ -275,7 +275,7 @@ services:
       PG_META_JWT_SECRET: ${JWT_SECRET}
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
 
   functions:
     <<: *service-defaults
@@ -295,9 +295,8 @@ services:
     volumes:
       - functions-data:/home/deno/functions:ro
       - deno-cache:/root/.cache
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:9000/functions/v1/health"]
+    # Edge Runtime is FROM scratch — no shell tools.
+    # Main process alive = service is working.
 
   # ═══════════════════════════════════════════════════════════
   # API Gateway
@@ -311,17 +310,17 @@ services:
       - supabase
     depends_on:
       auth:
-        condition: service_healthy
+        condition: service_started
       rest:
-        condition: service_healthy
+        condition: service_started
       realtime:
-        condition: service_healthy
+        condition: service_started
       storage:
-        condition: service_healthy
+        condition: service_started
       meta:
-        condition: service_healthy
+        condition: service_started
       functions:
-        condition: service_healthy
+        condition: service_started
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
@@ -381,7 +380,7 @@ services:
       NEXT_PUBLIC_IS_PLATFORM: "false"
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
 
   # ═══════════════════════════════════════════════════════════
   # Observability
@@ -398,11 +397,12 @@ services:
       VECTOR_REQUIRE_HEALTHY: "true"
     volumes:
       - ./monitoring/vector.toml:/etc/vector/vector.toml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:8686/health"]
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 5s
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8686/health || exit 1"]
 
   # ═══════════════════════════════════════════════════════════
   # Monitoring — Prometheus + Grafana (profile: monitoring)
