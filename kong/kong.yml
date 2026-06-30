@@ -289,7 +289,7 @@ services:
 consumers:
   - username: anon
     keyauth_credentials:
-      - key: ${ANON_KEY}
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzgyNzgzMzQ5LCJleHAiOjIwOTgxNDMzNDl9.PIdTvarwO2PmGAKZVbMbpweOG1r_xO0EUz41PK12Tr0
   - username: service_role
     keyauth_credentials:
-      - key: ${SERVICE_ROLE_KEY}
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODI3ODMzNDksImV4cCI6MjA5ODE0MzM0OX0.nZKbFPynwGGp0qnEJZqUjG8IVTgWZT4lGImKmbwVuC4

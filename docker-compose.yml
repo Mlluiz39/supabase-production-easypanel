@@ -339,11 +339,11 @@ services:
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
-    command: ["kong", "docker-start"]
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "kong", "health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8001/status || exit 1"]
       retries: 10
+      start_period: 20s
 
   # ═══════════════════════════════════════════════════════════
   # Dashboard

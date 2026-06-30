@@ -407,6 +407,29 @@ ensure_backup_dir() {
 }
 
 # ─── Main ───────────────────────────────────────────────────
+# ─── Generate kong.yml from template ──────────────────────────
+generate_kong_yml() {
+  local kong_file="$PROJECT_DIR/kong/kong.yml"
+
+  if [[ ! -f "$kong_file" ]]; then
+    log_warn "kong/kong.yml not found — skipping Kong config generation"
+    return
+  fi
+
+  local anon_key service_role_key
+  anon_key=$(grep '^ANON_KEY=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "")
+  service_role_key=$(grep '^SERVICE_ROLE_KEY=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "")
+
+  if [[ -z "$anon_key" ]]; then
+    log_warn "ANON_KEY not found in .env — skipping Kong config generation"
+    return
+  fi
+
+  sed -i "s|__ANON_KEY__|${anon_key}|g" "$kong_file"
+  sed -i "s|__SERVICE_ROLE_KEY__|${service_role_key}|g" "$kong_file"
+  log_ok "Kong config generated"
+}
+
 main() {
   echo ""
   log "═══════════════════════════════════════════════════"
@@ -420,10 +443,13 @@ main() {
   # 2. Handle .env / secrets
   handle_env
 
-  # 3. Ensure backup directory
+  # 3. Generate kong.yml from template
+  generate_kong_yml
+
+  # 4. Ensure backup directory
   ensure_backup_dir
 
-  # 4. Validate compose config
+  # 5. Validate compose config
   validate_compose
 
   # 5. Start services
