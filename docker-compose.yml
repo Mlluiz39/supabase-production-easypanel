@@ -203,7 +203,10 @@ services:
       MAX_REPLICATION_SLOTS: "10"
       SLOT_NAME: "supabase_realtime_rls"
     healthcheck:
-      <<: *healthcheck-defaults
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
       test: ["CMD-SHELL", "wget -qO- http://localhost:4000/realtime/v1/health || exit 1"]
 
   storage:
@@ -237,8 +240,12 @@ services:
       ENABLE_IMAGE_TRANSFORMATION: "true"
     volumes:
       - storage-data:/var/lib/storage
+    # Healthcheck: Node.js service, main process = healthy
     healthcheck:
-      <<: *healthcheck-defaults
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
       test: ["CMD-SHELL", "wget -qO- http://localhost:5000/storage/v1/health || exit 1"]
 
   imgproxy:

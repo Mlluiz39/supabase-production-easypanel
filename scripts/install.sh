@@ -35,15 +35,12 @@ CORE_SERVICES=(
   "supabase-db"
   "supabase-supavisor"
   "supabase-auth"
-  "supabase-rest"
-  "supabase-realtime"
-  "supabase-storage"
   "supabase-imgproxy"
-  "supabase-meta"
-  "supabase-functions"
   "supabase-kong"
-  "supabase-studio"
-  "supabase-vector"
+)
+# PostgREST is FROM scratch (no healthcheck) — check if running
+CHECK_RUNNING=(
+  "supabase-rest"
 )
 
 # ─── Helpers ────────────────────────────────────────────────
@@ -218,15 +215,28 @@ wait_for_healthy() {
 
     local healthy_count=0
     local total=${#CORE_SERVICES[@]}
+    if [[ -n "${CHECK_RUNNING+x}" ]]; then
+      total=$((total + ${#CHECK_RUNNING[@]}))
+    fi
     local failing_services=()
 
     for container in "${CORE_SERVICES[@]}"; do
       local status
       status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "missing")
       if [[ "$status" == "healthy" ]]; then
-        ((healthy_count++))
+        healthy_count=$((healthy_count + 1))
       else
         failing_services+=("$container ($status)")
+      fi
+    done
+
+    for container in "${CHECK_RUNNING[@]:-}"; do
+      local state
+      state=$(docker inspect --format='{{.State.Status}}' "$container" 2>/dev/null || echo "missing")
+      if [[ "$state" == "running" ]]; then
+        healthy_count=$((healthy_count + 1))
+      else
+        failing_services+=("$container ($state)")
       fi
     done
 
