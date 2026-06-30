@@ -360,9 +360,7 @@ start_services() {
     exit $up_exit
   fi
   log_ok "Services started"
-
-  # Return cloudflare status for summary
-  echo "$use_cloudflare"
+  USE_CLOUDFLARE=$use_cloudflare
 }
 
 # ─── Print summary ──────────────────────────────────────────
@@ -465,13 +463,12 @@ main() {
   validate_compose
 
   # 5. Start services
-  local use_cloudflare
   local extra_profiles=""
   if [[ "${include_monitoring:-false}" == "true" ]]; then
     extra_profiles="--profile monitoring --profile admin"
     log "Monitoring stack: enabled (Prometheus + Grafana + Admin Panel)"
   fi
-  use_cloudflare=$(start_services "$extra_profiles")
+  start_services "$extra_profiles"
 
   # 6. Wait for healthchecks (unless skipped)
   if $SKIP_HEALTHCHECK; then
@@ -481,7 +478,7 @@ main() {
   fi
 
   # 7. Print summary
-  print_summary "$use_cloudflare"
+  print_summary "${USE_CLOUDFLARE:-false}"
 }
 
 main
