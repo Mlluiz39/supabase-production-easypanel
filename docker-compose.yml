@@ -340,7 +340,8 @@ services:
       - ./kong/kong.yml:/tmp/kong.template.yml:ro
     command: >
       /bin/sh -c
-      "envsubst '$${ANON_KEY} $${SERVICE_ROLE_KEY}' < /tmp/kong.template.yml > /tmp/kong.yml
+      "apk add --no-cache gettext > /dev/null 2>&1
+      && envsubst '$${ANON_KEY} $${SERVICE_ROLE_KEY}' < /tmp/kong.template.yml > /tmp/kong.yml
       && kong docker-start"
     healthcheck:
       <<: *healthcheck-defaults
